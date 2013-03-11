@@ -1,0 +1,8 @@
+cfw = ldecl .
+ldecl = ldecl decl | decl .
+decl = 'message' '{' fields '}' .
+fields = identifier type .
+type = typename'('length')' .
+typename = 'float' | 'int' | 'string'
+fieldlist -> fielddecl restfielddecl
+restfielddecl -> fielddecl restfielddecl | ε
