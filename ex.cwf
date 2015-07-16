@@ -1,0 +1,21 @@
+operation Morosidad {
+	in: ivrMorosidadSolicitud {
+		idAplicacion	string(15);
+		idUsuario	string(18);
+		codigoCompletacion int(1);
+		codigoRazon	int(4);
+		tipoIdentificacion	int(1);
+		identificacion	int(17);
+	}
+	out: ivrMorosidadRespuesta {
+		idAplicacion	string(15);
+		idUsuario	string(18);
+		codigoCompletacion int(1);
+		codigoRazon	int(4);
+		tipoDeuda	int(1);
+		montoLiquidacion decimal(12,2);
+		montoPendientes decimal(12,2);
+		montoTotalDeuda decimal(12,2);
+		correoElectronico string(50);
+	} 
+}

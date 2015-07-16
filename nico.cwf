@@ -1,0 +1,9 @@
+// La operacion de nico
+operation Nicolas {
+	in: NicolasSolicitud {
+		m	string(10);
+	}
+	out: NicolasRespuesta {
+		m string(20);
+	}
+}

@@ -1,0 +1,100 @@
+CCWF: Un traductor de codificación ccwf a SDO.
+
+GBM
+http://www.gbm.net
+@GBMCorp
+
+* Resumen
+
+CCWF facilita la incorporación de sistemas de información que se comunican con el mundo exterior
+codificando la información en formato ccwf a un ESB implementado con WebSphere Enterprise Service Bus.
+Para lograr esto define una notación para describir la estructura de mensajes codificados cwf y traduce la misma
+a los artefactos necesarios para programar mediaciones de datos en WebSphere Integration Designer.
+
+El presente documento describe la notación establecida por ccwf, su utilización y los artefactos producidos.
+
+*  Introducción
+
+Sistemas legados de muchas instituciones aún utilizan la codificación CWF (Character Width Format) para la transmisión/recepción de datos en procesos de intercambio de información con otros sistemas. A modo de incorporar dichos sistemas en una SOA es conveniente tener facilidades para poder serializar/deserializar CWF a los formatos de representación de datos utilizados en un ESB. En particular si la herramienta a mano es WebSphere Enterprise Service Bus (WESB), es útil poder serializar/de-serializar CWF hacia SDO (Service Data Object) el formato de representación de datos utilizado por SCA en general y WESB en particular.
+
+La herramienta de desarrollo de WESB, WebSphere Integration Designer (wid), provee ciertas facilidades para la codificación CWF, sin embargo las mismas son un tanto limitadas en la expresión del formato (no permiten por ejemplo expresar un arreglo de datos) y lo que es más importante para poder expresar CWF se necesita realizar una serie de tareas repetitivas por el programador, tareas las cuales es mejor delegar a un programa.
+
+Por medio de la creación de una notación para la descripción de cwf se pretende de un modo ágil incorporar intercambios de datos entre sistemas legados utilizando esta codificación y WESB.
+La creación de una nueva notación podrá parecer excesivo para algunos, pero las particularidades de CWF, longitudes en campos numéricos por ejemplo, creemos que ameritan la creación de la misma.
+
+Para lograr los objetivos arriba descrito se ha creado un programa traductor llamado ccwf que emite a partir de la notación CWF los artefactos necesarios (XSDs, WSDL, código Java) en WID para trabajar con estructuras de datos expresadas en CWF.
+
+* La notación CWF
+
+CWF es una forma de codificación en que cada mensaje intercambiado tiene una longitud determinada conocida por las partes involucradas, esto es consecuencia de que cada campo en el mensaje tiene una longitud fija. Ilustremos esto con un ejemplo:
+ 
+ 	message Cliente {
+ 		Nombre	string(10);
+ 		Cedula	int(15);
+ 	}
+ 	
+Dada la definición anterior y que se quiera intercambiar un mensaje de este tipo conlos valores de nombre: Nicolas y Cedula: 12345, la representación CWF sería:
+
+ 	"NICOLAS   000000000012345"
+ 
+Como se puede notar la longitud del mensaje siempre es de 25 caracteres, los valores han sido rellenados para completar la longitud fija de cada uno de ellos.
+Como vemos la definición de un mensaje es la enumeración de los campos para cada uno de los cuales de define su nombre y longitud CWF, los tipos de datos permitidos son: 
+ 
+ 	string	representa una cadena de caracteres ASCII
+ 	int		representa un valor numérico entero en notación decimal
+ 	decimal	representa un valor numérico no entero (incluye una parte decimal)
+ 	
+Una vez ilustrado el concepto de CWF veamos la notación que ccwf define para CWF, ccwf define una notación para una operación de intercambio de datos entre un sistema
+que utiliza CWF y el resto del mundo, sigue un ejemplo:
+
+	operation DatosCliente {
+		in: DatosClienteReq  {
+			idCliente	string(12);
+		}
+		out: DatosClienteResp {
+			Nombre	string(32);
+			CantidadServicios	int(2);
+			SaldoActual	decimal(12,2);
+		}
+	}
+
+Con la definición de arriba estamos describiendo la operación de DatosCliente para consultar los datos de un cliente, especificando que el argumento de entrada es un mensaje CWF
+que contiene un solo campo llamado idCliente que es de longitud 12. La sección *out* define el mensaje de respuesta de la operación, la descripción puede entenderse de modo similar
+a como se hizo con el mensaje de entrada. Para un campo *decimal* como SaldoActual se especifica la cantidad de digitos para representar el número, 12 en este caso, y de la longitud 
+total cuantos dígitos representan la parte decimal, 2 en este caso.
+
+* Artefactos generados por ccwf
+
+Ccwf genera una serie de artefactos a partir de la definición de la operación CWF:
+
+- WSDL asociado a la operación.
+- XSD para el mensaje de entrada y de salida.	
+- Un programa Java con métodos para deserializar/serializar mensajes CWF a SDO y viceversa.
+		
+El flujo típico de un desarrollador WESB será escribir en un archivo de texto la definición de la operación CWF y ejecutar ccwf pasando como argumento el archivo creado
+
+	r61=; ls
+	consultacliente.ccwf
+	r61=; ccwf consultacliente.ccwf
+	r61=; ls
+	consultacliente.ccwf  DatosClienteReq.xsd   DatosCliente.wsdl
+	DatosClienteDH.java   DatosClienteResp.xsd
+	r61;
+
+Como se puede observar en el listado ccwf generó 4 archivos:
+
+- DatosClienteReq.xsd : es el XSD asociado al argumento de entrada a la operación.
+- DatosClienteResp.xsd : es el XSD asociado al argumento de salida de la operación.
+- DatosCliente.wsdl: es el WSDL que define la interfaz de la operación.
+- DatosClienteDH.java: Clase Java que implementa un "Data Handler" para serializar/deserializar CWF a SDO.
+
+Seguidamente el desarrollador WESB importa estos artefactos en su "workspace" de WID asociando la interfaz
+a la mediación que se desea crear y el "data handler" al "binding"  asociado al "export" de la mediación. El "binding" es usualmente de MQ Series, o JMS-Mq Series para ser más preciso. HTTP es
+otro "binding"  que puede ser utilizado.
+
+El siguiente mensaje define la operación para la obtención de la morosidad por un cliente a través del servicio IVR.
+Puede apretar el botón "Run"  para visualizar los artefactos generados por ccwf (en este caso en su browser).
+
+.play demo.go /START OMIT/,/END OMIT/
+
+		

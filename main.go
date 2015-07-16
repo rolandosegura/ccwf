@@ -40,12 +40,11 @@ func (op *Operation) emitDataHandler(w io.Writer) {
 	}
 }
 
-
 // The structure of a CWF message and XSD translation is represented with a Message
 type Message struct {
 	Name   string
 	Fields []*Field
-	Length	int	// total length of the CWF string
+	Length int // total length of the CWF string
 }
 
 //emitXSD: generates the XSD to w out of the message definition
@@ -63,23 +62,22 @@ func (m *Message) emitXSD(w io.Writer) {
 // PrintfFlags return the printf style flags to marshal this message as  a cwf string
 func (m *Message) PrintfFlags() string {
 	buf := []byte{}
-	for _,f := range m.Fields {
+	for _, f := range m.Fields {
 		// TODO(rolando) : think about type representation, a more efficient encoding is the token type
 		switch f.Type {
 		case "int":
-			buf = append(buf,[]byte(fmt.Sprintf("%%%dd",f.Length))...)
+			buf = append(buf, []byte(fmt.Sprintf("%%%dd", f.Length))...)
 		case "decimal":
-			buf = append(buf,[]byte(fmt.Sprintf("%%%d.%df",f.Length,f.Decimal))...)
+			buf = append(buf, []byte(fmt.Sprintf("%%%d.%df", f.Length, f.Decimal))...)
 		case "string":
-			buf = append(buf,[]byte(fmt.Sprintf("%%%ds",f.Length))...)
+			buf = append(buf, []byte(fmt.Sprintf("%%%ds", f.Length))...)
 		default:
-			panic(fmt.Errorf("I don't know how to marshal type %v",f.Type))
+			panic(fmt.Errorf("I don't know how to marshal type %v", f.Type))
 		}
 	}
-	
-	return fmt.Sprintf("%q",buf)
-}
 
+	return fmt.Sprintf("%q", buf)
+}
 
 func (m *Message) TestCWFMsg() string {
 	buf := []byte{}
@@ -112,7 +110,7 @@ func (f Field) DataObjectType() string {
 	case "string":
 		return "String"
 	default:
-		panic(fmt.Errorf("I don't know how to marshal type %v",f.Type))
+		panic(fmt.Errorf("I don't know how to marshal type %v", f.Type))
 	}
 	return ""
 }
@@ -279,14 +277,14 @@ func (p *Parser) message() *Message {
 	p.match(Token('}'))
 
 	// compute cwf's length of the message
-	n := 	len(msg.Fields) -1
+	n := len(msg.Fields) - 1
 	if n >= 0 {
 		lastf := msg.Fields[n]
 		msg.Length = lastf.Pos + lastf.Length
 	}
 	// generate xsd
 	xsdfname := msg.Name + ".xsd"
-	fd,err := os.Create(xsdfname)
+	fd, err := os.Create(xsdfname)
 	if err != nil {
 		fatal("creating file:%s:%v\n", xsdfname, err)
 	}
@@ -308,26 +306,25 @@ func (p *Parser) operation() {
 	p.match(Token(':'))
 	p.curOperation.Out = p.message()
 	p.match(Token('}'))
-	
+
 	// generate WSDL
 	wsdlfname := p.curOperation.Name + ".wsdl"
-	fd,err := os.Create(wsdlfname)
+	fd, err := os.Create(wsdlfname)
 	if err != nil {
 		fatal("creating file:%s:%v\n", wsdlfname, err)
 	}
 	defer fd.Close()
 	p.curOperation.emitWSDL(fd)
-	
+
 	// generate data handler
 	dhfname := p.curOperation.Name + "DH.java"
-	fd,err = os.Create(dhfname)
+	fd, err = os.Create(dhfname)
 	if err != nil {
 		fatal("creating file:%s:%v\n", dhfname, err)
 	}
 	defer fd.Close()
 	p.curOperation.emitDataHandler(fd)
 }
-
 
 // Compiles compiles the program read from r, and writes xsd file to w. Filename is the name bound to r (usually the name of the file in a file system)
 func compile(filename string, r io.Reader, w io.Writer) {
@@ -446,7 +443,6 @@ var wsdlTemplate = `<?xml version="1.0" encoding="UTF-8"?>
         </wsdl:portType>
 </wsdl:definitions>
 `
-
 
 var datahandlerTemplate = `
 package ice;
